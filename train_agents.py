@@ -1,10 +1,10 @@
 import _pickle as cPickle
 import argparse
-import datetime
 import hashlib
 import os
 import sys
 import time
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -36,6 +36,7 @@ with open(args.config_file, encoding='utf-8') as f:
 
 print(torch.__version__)
 
+
 def train_agents(verbose=True, config=None):
     if config is None:
         config = {}
@@ -51,20 +52,21 @@ def train_agents(verbose=True, config=None):
     guesser = agent_class(env, ndim=ndim, hsize=hsize, agent_config=agent_config)
 
     rewards = []
-        
+
     # calculate time hash for saving models
     print("Training started!")
     print(config)
     hash_time = hashlib.sha1()
     hash_time.update(str(time.time()).encode('utf-8'))
     hash_time = hash_time.hexdigest()[:8]
-    agent_str = agent_config['policy_type'] + '-' + agent_config['encoding_function'] + '-' + str(ndim) + '-' + str(hsize)
-    
-    # create path and save yaml file
-    Path(f"{config['result_dir']}/{agent_str}-{hash_time}").mkdir(parents=True, exist_ok=True)  
-    with open(f"{config['result_dir']}/{agent_str}-{hash_time}/configs.yaml", 'w') as f:
-                yaml.dump(config, f)
+    agent_str = agent_config['policy_type'] + '-' + agent_config['encoding_function'] + '-' + str(ndim) + '-' + str(
+        hsize)
 
+    # create path and save yaml file)
+    save_path = f"{config['result_dir']}/{agent_str}-{hash_time}"
+    Path(save_path).mkdir(parents=True, exist_ok=True)
+    with open(f"{save_path}/configs.yaml", 'w') as handle:
+        yaml.dump(config, handle)
 
     for i_episode, _ in enumerate(tqdm(range(num_episodes))):
         obs_to_hinter = env.reset()
@@ -91,35 +93,39 @@ def train_agents(verbose=True, config=None):
                 gloss, gq, gqhat = res2
 
         rewards.append(r.cpu().numpy()[0])
-        print_num = num_episodes // 100
-        if verbose:
-            if i_episode > 1000 and i_episode % print_num == 0:
-                rw_to_print = np.array(rewards[-print_num:])
-                rewards = []
-                print(datetime.datetime.now(), i_episode,
-                      np.sum(np.array(rw_to_print) >= 0, axis=0) / rw_to_print.shape[0], hinter.epsilon)
-                print(round(hloss, 2), round(hq, 2), round(hqhat, 2), round(gloss, 2), round(gq, 2), round(gqhat, 2))
-        if i_episode > 1000 and i_episode % print_num == 0:
+        print_num = max(num_episodes // 500, 10)
+        save_num = max(num_episodes // 10, 100)
+        if i_episode > 1 and i_episode % print_num == 0:
+            rw_to_print = np.array(rewards[-print_num:])
+            rewards = []
+            mean_win = np.sum(np.array(rw_to_print) >= 0, axis=0) / rw_to_print.shape[0]
             localtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            mean_win = str(np.array(rw_to_print) >= 0, axis=0) / rw_to_print.shape[0]) 
-            with open("train_log.txt", "a") as f:
-                f.write(localtime+". Win rate: "+ mean_win + "P1 loss: " + str(round(hloss, 2)) + 
-                        "P2 loss: " + str(round(gloss, 2)) 
-                        '\n')
-                f.write("P1 Q/Q_hat: " + str(round(hq, 2)) + "/" + str(round(hqhat, 2)) + " P2 Q/Q_hat " + str(round(gq, 2)) + "/" + str(round(gqhat, 2)) )
-            with open(f"{config['result_dir']}/{agent_str}-{hash_time}/{i_episode}.pkl", "wb") as output_file:
-                cPickle.dump(resdict, output_file)
-            
+            with open(f"{save_path}/train_log.txt", "a") as handle:
+                handle.write(localtime + ". Win rate: " + str(mean_win) + " P1 loss: " + str(round(hloss, 3)) +
+                             " P2 loss: " + str(round(gloss, 3)) + '\n')
+                handle.write("P1 Q/Q_hat: " + str(round(hq, 2)) + "/" + str(round(hqhat, 2)) + " P2 Q/Q_hat " + str(
+                    round(gq, 2)) + "/" + str(round(gqhat, 2)) + '\n')
+            if verbose:
+                print(localtime, i_episode, mean_win, hinter.epsilon)
+                print(round(hloss, 2), round(hq, 2), round(hqhat, 2), round(gloss, 2), round(gq, 2), round(gqhat, 2))
+
+        if i_episode > 1 and i_episode % save_num == 0:
+            hinter_snapshot = deepcopy(hinter)
+            guesser_snapshot = deepcopy(guesser)
+            hinter_snapshot.memory = None
+            guesser_snapshot.memory = None
+            with open(f"{save_path}/{i_episode}.pkl", "wb") as output_file:
+                cPickle.dump({'p1': hinter_snapshot, 'p2': guesser_snapshot}, output_file)
+            print(f"Snapshot {i_episode} saved at {save_path}")
 
     hinter.memory = None
     guesser.memory = None
-    resdict = {'p1': hinter, 'p2': guesser}
-    return resdict
+    res = {'p1': hinter, 'p2': guesser}
+    return res
 
 
 if __name__ == '__main__':
     print("Training started!")
     print(config)
-    resdict = train_agents(config=config)
+    res_dict = train_agents(config=config)
     print(config)
-    print(f"Results saved at {config['result_dir']}/{agent_str}-{hash_time}")
