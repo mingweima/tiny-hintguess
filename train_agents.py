@@ -68,7 +68,7 @@ def train_agents(verbose=True, config=None):
     with open(f"{save_path}/configs.yaml", 'w') as handle:
         yaml.dump(config, handle)
 
-    for i_episode, _ in enumerate(tqdm(range(num_episodes))):
+    for i_episode in range(num_episodes):
         obs_to_hinter = env.reset()
         hint_action = hinter.select_action(torch.tensor(obs_to_hinter, device=device))
         obs_to_guesser, _, _, _ = env.step(hint_action.item())

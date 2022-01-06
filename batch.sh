@@ -5,10 +5,10 @@
 #SBATCH --partition=caslake
 #SBATCH --ntasks=80       # 1 CPU core to drive GPU
 #SBATCH --cpus-per-task=1        # cpu-cores per task (>1 if multi-threaded tasks)
-#SBATCH --mem-per-cpu=6G  # NOTE DO NOT USE THE --mem= OPTION 
-#SBATCH --output=cpu1.out
-#SBATCH --error=cpu1.err
-#SBATCH --time=24:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --mem-per-cpu=10G  # NOTE DO NOT USE THE --mem= OPTION 
+#SBATCH --output=zcpu.out
+#SBATCH --error=zcpu.err
+#SBATCH --time=30:00:00          # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=all          # send email on job start, end and fail
 #SBATCH --mail-user=mma3@chicagobooth.edu
 
@@ -29,7 +29,7 @@ module load parallel
 
 
 srun="srun --exclusive -N1 -n1"
-parallel="parallel --delay 0.2 -j $SLURM_NTASKS --joblog cpu_run.log --resume"
+parallel="parallel --delay 0.2 -j $SLURM_NTASKS --joblog zcpu_run.log --resume"
 
 $parallel "$srun ./single_run.sh {1} {2}" ::: ai_124_sin.yaml ai_124_hot.yaml dqn_124_sin.yaml dqn_124_hot.yaml ::: {1..20}
 
