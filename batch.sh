@@ -8,7 +8,7 @@
 #SBATCH --mem-per-cpu=6G  # NOTE DO NOT USE THE --mem= OPTION 
 #SBATCH --output=cpu1.out
 #SBATCH --error=cpu1.err
-#SBATCH --time=08:00:00          # total run time limit (HH:MM:SS)
+#SBATCH --time=24:00:00          # total run time limit (HH:MM:SS)
 #SBATCH --mail-type=all          # send email on job start, end and fail
 #SBATCH --mail-user=mma3@chicagobooth.edu
 
