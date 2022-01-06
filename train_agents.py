@@ -101,7 +101,7 @@ def train_agents(verbose=True, config=None):
             mean_win = np.sum(np.array(rw_to_print) >= 0, axis=0) / rw_to_print.shape[0]
             localtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             with open(f"{save_path}/train_log.txt", "a") as handle:
-                handle.write(localtime + ". Win rate: " + str(mean_win) + " P1 loss: " + str(round(hloss, 3)) +
+                handle.write(localtime + " Episodes: " + str(i_episode) + " Win rate: " + str(mean_win) + " P1 loss: " + str(round(hloss, 3)) +
                              " P2 loss: " + str(round(gloss, 3)) + '\n')
                 handle.write("P1 Q/Q_hat: " + str(round(hq, 2)) + "/" + str(round(hqhat, 2)) + " P2 Q/Q_hat " + str(
                     round(gq, 2)) + "/" + str(round(gqhat, 2)) + '\n')
