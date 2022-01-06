@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from copy import deepcopy
 from models import *
 
 
@@ -57,6 +57,13 @@ class DQNAgent(Agent):
             raise ValueError("Given policy type invalid!")
         self.policy_net.to(self.device)
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=agent_config['learning_rate'])
+
+    def detach(self):
+        new_agent = self.__class__(self.env, ndim=self.ndim, hsize=self.hsize, agent_config=self.agent_config)
+        new_agent.policy_net = deepcopy(self.policy_net)
+        new_agent.policy_net.to(self.device)
+        new_agent.optimizer = torch.optim.Adam(new_agent.policy_net.parameters(), lr=self.agent_config['learning_rate'])
+        return new_agent
 
     def update_rates(self, denominator: float) -> None:
         self.epsilon = self.agent_config['eps_end'] + (

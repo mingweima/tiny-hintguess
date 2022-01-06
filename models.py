@@ -79,6 +79,7 @@ class ActionInModel(nn.Module):
         self.attn_head = Attention(seq_len + 1, embedding_dim)
         self.linear = nn.Sequential(nn.Linear((seq_len + 1) * embedding_dim, 128),
                                     nn.ReLU(),
+                                    nn.Dropout(0.5),
                                     nn.Linear(128, 1))
 
     def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
