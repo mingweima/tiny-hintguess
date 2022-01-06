@@ -34,6 +34,7 @@ args = parser.parse_args()
 with open(args.config_file, encoding='utf-8') as f:
     config = yaml.safe_load(f)
 
+print(torch.__version__)
 
 def train_agents(verbose=True, config=None):
     if config is None:
@@ -50,6 +51,21 @@ def train_agents(verbose=True, config=None):
     guesser = agent_class(env, ndim=ndim, hsize=hsize, agent_config=agent_config)
 
     rewards = []
+        
+    # calculate time hash for saving models
+    print("Training started!")
+    print(config)
+    hash_time = hashlib.sha1()
+    hash_time.update(str(time.time()).encode('utf-8'))
+    hash_time = hash_time.hexdigest()[:8]
+    agent_str = agent_config['policy_type'] + '-' + agent_config['encoding_function'] + '-' + str(ndim) + '-' + str(hsize)
+    
+    # create path and save yaml file
+    Path(f"{config['result_dir']}/{agent_str}-{hash_time}").mkdir(parents=True, exist_ok=True)  
+    with open(f"{config['result_dir']}/{agent_str}-{hash_time}/configs.yaml", 'w') as f:
+                yaml.dump(config, f)
+
+
     for i_episode, _ in enumerate(tqdm(range(num_episodes))):
         obs_to_hinter = env.reset()
         hint_action = hinter.select_action(torch.tensor(obs_to_hinter, device=device))
@@ -83,6 +99,17 @@ def train_agents(verbose=True, config=None):
                 print(datetime.datetime.now(), i_episode,
                       np.sum(np.array(rw_to_print) >= 0, axis=0) / rw_to_print.shape[0], hinter.epsilon)
                 print(round(hloss, 2), round(hq, 2), round(hqhat, 2), round(gloss, 2), round(gq, 2), round(gqhat, 2))
+        if i_episode > 1000 and i_episode % print_num == 0:
+            localtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            mean_win = str(np.array(rw_to_print) >= 0, axis=0) / rw_to_print.shape[0]) 
+            with open("train_log.txt", "a") as f:
+                f.write(localtime+". Win rate: "+ mean_win + "P1 loss: " + str(round(hloss, 2)) + 
+                        "P2 loss: " + str(round(gloss, 2)) 
+                        '\n')
+                f.write("P1 Q/Q_hat: " + str(round(hq, 2)) + "/" + str(round(hqhat, 2)) + " P2 Q/Q_hat " + str(round(gq, 2)) + "/" + str(round(gqhat, 2)) )
+            with open(f"{config['result_dir']}/{agent_str}-{hash_time}/{i_episode}.pkl", "wb") as output_file:
+                cPickle.dump(resdict, output_file)
+            
 
     hinter.memory = None
     guesser.memory = None
@@ -94,15 +121,5 @@ if __name__ == '__main__':
     print("Training started!")
     print(config)
     resdict = train_agents(config=config)
-    hash_time = hashlib.sha1()
-    hash_time.update(str(time.time()).encode('utf-8'))
-    hash_time = hash_time.hexdigest()[:8]
-
-    Path(f"{config['result_dir']}/{hash_time}").mkdir(parents=True, exist_ok=True)
-
-    with open(f"{config['result_dir']}/{hash_time}/models.pkl", "wb") as output_file:
-        cPickle.dump(resdict, output_file)
-    with open(f"{config['result_dir']}/{hash_time}/configs.yaml", 'w') as f:
-        yaml.dump(config, f)
     print(config)
-    print(f"Results saved at {config['result_dir']}/{hash_time}")
+    print(f"Results saved at {config['result_dir']}/{agent_str}-{hash_time}")

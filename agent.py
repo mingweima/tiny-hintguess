@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from einops import rearrange
-
 from models import *
 
 
@@ -46,6 +44,8 @@ class DQNAgent(Agent):
             self.encoding_function = one_hot_encoding
         elif agent_config['encoding_function'] == 'sin':
             self.encoding_function = sin_positional_encoding
+        else:
+            raise ValueError("Invalid encoding function!")
 
         # Policy net: input tensor of size (B: batch size, N: sequence len, D: embed dim)
         # output tensor of size (B, num_actions) containing Q values
@@ -97,7 +97,7 @@ class DQNAgent(Agent):
         batch = Transition(*zip(*transitions))
         state_batch = torch.stack(batch.state, dim=0)  # (bs, embdim, numcards)
         # print(state_batch.size())
-        state_batch = rearrange(state_batch, 'b e n -> b n e')
+        state_batch = torch.einsum('ben->bne', state_batch)
         action_batch = torch.cat(batch.action)
         reward_batch = torch.cat(batch.reward)
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
