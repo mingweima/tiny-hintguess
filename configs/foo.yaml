@@ -1,0 +1,16 @@
+result_dir: res
+num_episodes: 300
+ndim: 5
+hsize: 3
+update_frequency: 10
+
+agent_config:
+    embedding_dim: 12
+    policy_type: DQN
+    replay_capacity: 100
+    learning_rate: 1.0e-4
+    batch_size: 5
+    eps_start: 1.
+    eps_end: 0.1
+    eps_decay: 10
+    encoding_function: one_hot
