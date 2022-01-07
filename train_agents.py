@@ -4,13 +4,12 @@ import hashlib
 import os
 import sys
 import time
-from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import torch
 import yaml
-from tqdm import tqdm
 
 from agent import DQNAgent
 from game import TinyHintGuessGame
@@ -100,11 +99,20 @@ def train_agents(verbose=True, config=None):
             rewards = []
             mean_win = np.sum(np.array(rw_to_print) >= 0, axis=0) / rw_to_print.shape[0]
             localtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            with open(f"{save_path}/train_log.txt", "a") as handle:
-                handle.write(localtime + " Episodes: " + str(i_episode) + " Win rate: " + str(round(mean_win,3)) + " P1 loss: " + str(round(hloss, 3)) +
-                             " P2 loss: " + str(round(gloss, 3)) + '\n')
-                handle.write("P1 Q/Q_hat: " + str(round(hq, 2)) + "/" + str(round(hqhat, 2)) + " P2 Q/Q_hat " + str(
-                    round(gq, 2)) + "/" + str(round(gqhat, 2)) + '\n')
+
+            # logging and printing
+            log_csv = f"{save_path}/log.csv"
+            log_df = pd.DataFrame([[i_episode, mean_win, hloss, gloss, hq, hqhat, gq, gqhat, hinter.epsilon]],
+                                  columns=['episodes', 'return', 'hinter_loss', 'guesser_loss',
+                                           'hinter_q', 'hinter_qhat', 'guesser_q', 'guesser_qhat',
+                                           'exploration'])
+            log_csv_exists = os.path.isfile(log_csv)
+            use_header = not log_csv_exists
+            log_df.to_csv(log_csv,
+                          index=False,
+                          header=use_header,
+                          mode='a',  # append data to csv file
+                          chunksize=1)  # size of data to append for each loop
             if verbose:
                 print(localtime, i_episode, mean_win, hinter.epsilon)
                 print(round(hloss, 2), round(hq, 2), round(hqhat, 2), round(gloss, 2), round(gq, 2), round(gqhat, 2))
@@ -114,16 +122,17 @@ def train_agents(verbose=True, config=None):
             guesser_snapshot = guesser.detach()
             with open(f"{save_path}/{i_episode}.pkl", "wb") as output_file:
                 cPickle.dump({'p1': hinter_snapshot, 'p2': guesser_snapshot}, output_file)
-            print(f"Snapshot {i_episode} saved at {save_path}")
+            print(f"Snapshot {i_episode} saved at {save_path}.")
 
     hinter.memory = None
     guesser.memory = None
     res = {'p1': hinter, 'p2': guesser}
+    with open(f"{save_path}/{num_episodes}.pkl", "wb") as output_file:
+        cPickle.dump({'p1': hinter, 'p2': guesser}, output_file)
+    print(f"Final result saved at {save_path}.")
     return res
 
 
 if __name__ == '__main__':
-    print("Training started!")
-    print(config)
     res_dict = train_agents(config=config, verbose=False)
     print(config)

@@ -47,7 +47,7 @@ class ReplayMemory(object):
 
 
 class Attention(nn.Module):
-    def __init__(self, seq_len: int, embedding_dim: int, dropout: float = 0.1):
+    def __init__(self, seq_len: int, embedding_dim: int, dropout: float = 0.4, num_head=1):
         super().__init__()
         self.seq_len = seq_len
         self.dk = embedding_dim
@@ -59,24 +59,24 @@ class Attention(nn.Module):
         self.norm_1 = nn.LayerNorm(normalized_shape=embedding_dim)
         self.norm_2 = nn.LayerNorm(normalized_shape=embedding_dim)
         self.dropout = nn.Dropout(dropout)
-        self.multihead_attn = nn.MultiheadAttention(embedding_dim, 1, batch_first=True)
+        self.multihead_attn = nn.MultiheadAttention(embedding_dim, num_head, batch_first=True)
 
-    def forward(self, s: torch.Tensor):
+    def forward(self, input_tensor: torch.Tensor):
         # size (B,N,D) or (N,D)
-        s = self.norm_1(s).float()
-        q = self.q_linear(s)  # (B, N, D)
-        k = self.k_linear(s)
-        v = self.v_linear(s)
+        input_tensor = self.norm_1(input_tensor).float()
+        q = self.q_linear(input_tensor)  # (B, N, D)
+        k = self.k_linear(input_tensor)
+        v = self.v_linear(input_tensor)
         attn_output, attn_output_weights = self.multihead_attn(q, k, v)
-        s = self.norm_2(s + self.dropout(attn_output))
-        return s
+        output_tensor = self.norm_2(input_tensor + self.dropout(attn_output))
+        return output_tensor
 
 
 class ActionInModel(nn.Module):
-    def __init__(self, seq_len: int, embedding_dim: int):
+    def __init__(self, seq_len: int, embedding_dim: int, num_head=1):
         super(ActionInModel, self).__init__()
         self.n_token = int((seq_len - 1) / 2)
-        self.attn_head = Attention(seq_len + 1, embedding_dim)
+        self.attn_head = Attention(seq_len + 1, embedding_dim, num_head=num_head)
         self.linear = nn.Sequential(nn.Linear((seq_len + 1) * embedding_dim, 128),
                                     nn.ReLU(),
                                     nn.Dropout(0.5),

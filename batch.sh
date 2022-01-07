@@ -31,5 +31,5 @@ module load parallel
 srun="srun --exclusive -N1 -n1"
 parallel="parallel --delay 0.2 -j $SLURM_NTASKS --joblog zcpu_run.log --resume"
 
-$parallel "$srun ./single_run.sh {1} {2}" ::: ai_124_sin.yaml ai_124_hot.yaml dqn_124_sin.yaml dqn_124_hot.yaml ::: {1..20}
+$parallel "$srun ./single_run.sh {1} {2}" ::: ai_63_sin.yaml ai_63_hot.yaml dqn_63_sin.yaml dqn_63_hot.yaml ::: {1..20}
 

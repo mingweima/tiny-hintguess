@@ -31,6 +31,7 @@ class DQNAgent(Agent):
         agent_config.setdefault('eps_end', 0.05)
         agent_config.setdefault('eps_decay', int(1e5))
         agent_config.setdefault('encoding_function', 'one_hot')
+        agent_config.setdefault('num_head', 5)
         self.env = env
         self.agent_config = agent_config
         self.epsilon = agent_config['eps_start']
@@ -50,7 +51,7 @@ class DQNAgent(Agent):
         # Policy net: input tensor of size (B: batch size, N: sequence len, D: embed dim)
         # output tensor of size (B, num_actions) containing Q values
         if agent_config['policy_type'] == "ActionIn":
-            self.policy_net = ActionInModel(seq_len, embedding_dim)
+            self.policy_net = ActionInModel(seq_len, embedding_dim, num_head=agent_config['num_head'])
         elif agent_config['policy_type'] == "DQN":
             self.policy_net = DQNModel(seq_len, embedding_dim)
         else:
