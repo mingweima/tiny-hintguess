@@ -14,3 +14,4 @@ agent_config:
     eps_end: 0.1
     eps_decay: 10
     encoding_function: sin
+    num_head: 1
