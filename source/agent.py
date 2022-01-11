@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
-import sys
 
 from model import *
 
@@ -18,7 +17,7 @@ class Agent(ABC):
         """
 
 
-class DQNAgent(Agent):
+class QAgent(Agent, ABC):
     def __init__(self, env, ndim=10, hsize=4, agent_config=None):
         super().__init__(ndim, hsize)
         if agent_config is None:
@@ -33,7 +32,7 @@ class DQNAgent(Agent):
         agent_config.setdefault('eps_end', 0.05)
         agent_config.setdefault('eps_decay', int(1e5))
         agent_config.setdefault('encoding_function', 'one_hot')
-        agent_config.setdefault('num_head', 5)
+        agent_config.setdefault('num_head', 1)
         self.env = env
         self.agent_config = agent_config
         self.epsilon = agent_config['eps_start']
@@ -63,7 +62,7 @@ class DQNAgent(Agent):
 
     def __str__(self) -> str:
         return self.agent_config['policy_type'] + '-' + self.agent_config['encoding_function'] + '-' + str(
-            self.env.ndim) + '-' + str(self.env.hsize)
+            self.agent_config['num_head']) + '-' + str(self.env.ndim) + '-' + str(self.env.hsize)
 
     def detach_copy(self) -> Agent:
         """save model snapshot that only contains NN params but no memory"""

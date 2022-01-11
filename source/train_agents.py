@@ -12,7 +12,7 @@ import pandas as pd
 import torch
 import yaml
 
-from agent import DQNAgent
+from agent import QAgent
 from game import TinyHintGuessGame
 
 sys.path.append(os.getcwd())
@@ -45,7 +45,7 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
     num_episodes = config.get("num_episodes", int(3e6))
     ndim, hsize = config.get("ndim", 5), config.get("hsize", 3)
     update_frequency = config.get("update_frequency", 250)
-    agent_class = config.get("agent_class", DQNAgent)
+    agent_class = config.get("agent_class", QAgent)
     agent_config = config.get("agent_config", {})
 
     env = TinyHintGuessGame(ndim=ndim, hsize=hsize)
@@ -74,7 +74,8 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
         hint_action = hinter.select_action(torch.tensor(obs_to_hinter, device=device))
         obs_to_guesser, _, _, _ = env.step(hint_action.item())
         guess_action = guesser.select_action(torch.tensor(obs_to_guesser, device=device))
-        _, r, _, _ = env.step(guess_action)
+        # print(hint_action, guess_action)
+        _, r, _, _ = env.step(guess_action.item())
 
         # store the transition in memory
         obs_to_hinter = torch.tensor(np.array(obs_to_hinter), device=device)

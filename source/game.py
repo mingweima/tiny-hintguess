@@ -26,10 +26,10 @@ class TinyHintGuessGame:
         return np.hstack((self.h1, self.h2, np.array(self.target)))
 
     def step(self, action: int) -> (np.ndarray, float, bool, dict):
+       # print(action)
         if self.steps == 0:
             self.hint = self.h1[action]
             self.steps += 1
-            shit = np.hstack((self.h1, self.h2, np.array(self.hint)))
             return np.hstack((self.h1, self.h2, np.array(self.hint))), 0, False, {}
         if self.steps == 1:
             self.guess = self.h2[action]
