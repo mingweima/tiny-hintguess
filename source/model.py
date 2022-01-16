@@ -21,7 +21,7 @@ def sin_positional_encoding(pos_array: torch.Tensor, d_model: int = 500):
     pe = pos_array @ div_term_expanded.T  # (N, d)
     pe[:, 0::2] = np.sin(pe[:, 0::2])
     pe[:, 1::2] = np.cos(pe[:, 1::2])
-    return pe.to(torch.float32)  # N*d
+    return pe.to(torch.float32)  # (N, d)
 
 
 def one_hot_encoding(pos_array: torch.Tensor, d_model: int = 500):
@@ -91,7 +91,7 @@ class ActionInModel(nn.Module):
         for i in range(self.n_token):
             action_tensor = action_space[..., i, :].unsqueeze(-2)
             input_cat = torch.cat((input_tensor.clone().detach().requires_grad_(True),
-                                   action_tensor.clone().detach().requires_grad_(True)), -2)
+                                   action_tensor.clone().detach().requires_grad_(True)), -2)  # concat input to action; (B,N+1,D)
             S = self.attn_head(input_cat)
             X = torch.flatten(S, start_dim=-2).float()
             qval = self.linear(X)

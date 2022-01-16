@@ -7,12 +7,12 @@ class TinyHintGuessGame:
         self.ndim = ndim
         self.hsize = hsize
         self.nums_array = np.array(list(range(ndim)))
-        self.h1, self.h2, self.target = None, None, None
+        self.h1, self.h2, self.h1_per, self.h2_per, self.target = None, None, None, None, None
         self.hint, self.guess, self.reward = None, None, None
         self.steps = 0
 
     def reset(self, initial_config: dict = None) -> np.ndarray:
-        self.h1, self.h2, self.target = None, None, None
+        self.h1, self.h2, self.h1_per, self.h2_per, self.target = None, None, None, None, None
         self.hint, self.guess, self.reward = None, None, None
         self.steps = 0
         if initial_config is None:
@@ -23,14 +23,15 @@ class TinyHintGuessGame:
             self.h1 = initial_config['h1']
             self.h2 = initial_config['h2']
             self.target = initial_config['target']
-        return np.hstack((self.h1, self.h2, np.array(self.target)))
+        self.h1_per = np.random.permutation(self.h1)  # permute hands
+        self.h2_per = np.random.permutation(self.h2)
+        return np.hstack((self.h2, self.h1, np.array(self.target))) # this is obs to hinter; note that the action space (here h1) must be right before the target which is at the end
 
     def step(self, action: int) -> (np.ndarray, float, bool, dict):
-       # print(action)
         if self.steps == 0:
             self.hint = self.h1[action]
             self.steps += 1
-            return np.hstack((self.h1, self.h2, np.array(self.hint))), 0, False, {}
+            return np.hstack((self.h1_per, self.h2, np.array(self.hint))), 0, False, {}
         if self.steps == 1:
             self.guess = self.h2[action]
             if self.guess == self.target:

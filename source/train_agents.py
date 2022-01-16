@@ -31,7 +31,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-with open(args.config_file, encoding='utf-8') as f:
+with open("../" +args.config_file, encoding='utf-8') as f:
     usr_config = yaml.safe_load(f)
 
 print(torch.__version__)
@@ -97,7 +97,7 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
         # append rewards to running rewards and print automatically
         running_rewards.append(r.cpu().numpy()[0])
         print_num = max(num_episodes // 500, 10)
-        save_num = max(num_episodes // 10, 100)
+        save_num = max(num_episodes // 4, 100)
         if i_episode > 1 and i_episode % print_num == 0:
             rw_to_print = np.array(running_rewards[-print_num:])
             running_rewards = []
@@ -139,5 +139,5 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
 
 
 if __name__ == '__main__':
-    res_dict = train_agents(config=usr_config, verbose=False)
+    res_dict = train_agents(config=usr_config, verbose=True)
     print(usr_config)

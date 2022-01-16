@@ -57,6 +57,7 @@ class QAgent(Agent, ABC):
             self.policy_net = DQNModel(seq_len, embedding_dim)
         else:
             raise ValueError("Given policy type invalid!")
+
         self.policy_net.to(self.device)
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=agent_config['learning_rate'])
 
@@ -65,7 +66,7 @@ class QAgent(Agent, ABC):
             self.agent_config['num_head']) + '-' + str(self.env.ndim) + '-' + str(self.env.hsize)
 
     def detach_copy(self) -> Agent:
-        """save model snapshot that only contains NN params but no memory"""
+        """save agent model snapshot that only contains NN params but no memory"""
         new_agent = self.__class__(self.env, ndim=self.ndim, hsize=self.hsize, agent_config=self.agent_config)
         new_agent.policy_net = deepcopy(self.policy_net)
         new_agent.optimizer = torch.optim.Adam(new_agent.policy_net.parameters(), lr=self.agent_config['learning_rate'])
@@ -81,7 +82,7 @@ class QAgent(Agent, ABC):
         """transform obs from array of integers to encodings"""
         # The obs is (h1, h2, target/hint), which are all 1D arrays
         return self.encoding_function(obs, d_model=self.agent_config[
-            'embedding_dim'])  # N*d, where N is the number of cards, d is the embedding dim
+            'embedding_dim'])  # (N,d), where N is the number of cards, d is the embedding dim
 
     def select_action(self, obs: torch.Tensor, evaluate=False) -> torch.Tensor:
         """given obs, select action for agent"""
