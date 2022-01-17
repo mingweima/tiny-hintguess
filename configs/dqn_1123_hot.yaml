@@ -1,11 +1,11 @@
 result_dir: res
-num_episodes: 10000000
-ndim: 12
+num_episodes: 20000000
+ndim: 20
 hsize: 3
 update_frequency: 50
 
 agent_config:
-    embedding_dim: 100
+    embedding_dim: 200
     policy_type: DQN
     replay_capacity: 1000
     learning_rate: 1.0e-4

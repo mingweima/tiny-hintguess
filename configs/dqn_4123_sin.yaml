@@ -1,6 +1,6 @@
 result_dir: res
-num_episodes: 10000000
-ndim: 12
+num_episodes: 20000000
+ndim: 20
 hsize: 3
 update_frequency: 50
 

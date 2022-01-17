@@ -121,13 +121,13 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
                 print(localtime, i_episode, mean_win, hinter.epsilon)
                 print(round(hloss, 2), round(hq, 2), round(hqhat, 2), round(gloss, 2), round(gq, 2), round(gqhat, 2))
 
-        if i_episode > 1 and i_episode % save_num == 0:
-            # save model snapshots periodically
-            hinter_snapshot = hinter.detach_copy()
-            guesser_snapshot = guesser.detach_copy()
-            with open(f"{save_path}/{i_episode}.pkl", "wb") as output_file:
-                cPickle.dump({'p1': hinter_snapshot, 'p2': guesser_snapshot}, output_file)
-            print(f"Snapshot {i_episode} saved at {save_path}.")
+        # if i_episode > 1 and i_episode % save_num == 0:
+        #     # save model snapshots periodically
+        #     hinter_snapshot = hinter.detach_copy()
+        #     guesser_snapshot = guesser.detach_copy()
+        #     with open(f"{save_path}/{i_episode}.pkl", "wb") as output_file:
+        #         cPickle.dump({'p1': hinter_snapshot, 'p2': guesser_snapshot}, output_file)
+        #     print(f"Snapshot {i_episode} saved at {save_path}.")
 
     hinter.memory = None
     guesser.memory = None
