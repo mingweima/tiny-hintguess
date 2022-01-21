@@ -24,7 +24,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 parser = argparse.ArgumentParser(description='Specify the directory of the config file!')
 parser.add_argument(
     "--config-file",
-    default="../configs/foo.yaml",
+    default="configs/foo.yaml",
     metavar="FILE",
     help="path to config file",
     type=str,
@@ -51,6 +51,9 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
     env = TinyHintGuessGame(ndim=ndim, hsize=hsize)
     hinter = agent_class(env, ndim=ndim, hsize=hsize, agent_config=agent_config)
     guesser = agent_class(env, ndim=ndim, hsize=hsize, agent_config=agent_config)
+    
+    hinter.policy_net.train()
+    guesser.policy_net.train()
 
     running_rewards = []
 
@@ -97,7 +100,7 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
         # append rewards to running rewards and print automatically
         running_rewards.append(r.cpu().numpy()[0])
         print_num = max(num_episodes // 500, 10)
-        save_num = max(num_episodes // 4, 100)
+        save_num = max(num_episodes // 20, 100)
         if i_episode > 1 and i_episode % print_num == 0:
             rw_to_print = np.array(running_rewards[-print_num:])
             running_rewards = []
@@ -121,13 +124,13 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
                 print(localtime, i_episode, mean_win, hinter.epsilon)
                 print(round(hloss, 2), round(hq, 2), round(hqhat, 2), round(gloss, 2), round(gq, 2), round(gqhat, 2))
 
-        # if i_episode > 1 and i_episode % save_num == 0:
-        #     # save model snapshots periodically
-        #     hinter_snapshot = hinter.detach_copy()
-        #     guesser_snapshot = guesser.detach_copy()
-        #     with open(f"{save_path}/{i_episode}.pkl", "wb") as output_file:
-        #         cPickle.dump({'p1': hinter_snapshot, 'p2': guesser_snapshot}, output_file)
-        #     print(f"Snapshot {i_episode} saved at {save_path}.")
+        if i_episode > 1 and i_episode % save_num == 0:
+            # save model snapshots periodically
+            hinter_snapshot = hinter.detach_copy()
+            guesser_snapshot = guesser.detach_copy()
+            with open(f"{save_path}/{i_episode}.pkl", "wb") as output_file:
+                cPickle.dump({'p1': hinter_snapshot, 'p2': guesser_snapshot}, output_file)
+            print(f"Snapshot {i_episode} saved at {save_path}.")
 
     hinter.memory = None
     guesser.memory = None

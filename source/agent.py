@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from hashlib import new
 
 from model import *
 
@@ -33,6 +34,7 @@ class QAgent(Agent, ABC):
         agent_config.setdefault('eps_decay', int(1e5))
         agent_config.setdefault('encoding_function', 'one_hot')
         agent_config.setdefault('num_head', 1)
+        agent_config.setdefault('num_attn', 1)
         self.env = env
         self.agent_config = agent_config
         self.epsilon = agent_config['eps_start']
@@ -52,24 +54,32 @@ class QAgent(Agent, ABC):
         # Policy net: input tensor of size (B: batch size, N: sequence len, D: embed dim)
         # output tensor of size (B, num_actions) containing Q values
         if agent_config['policy_type'] == "ActionIn":
-            self.policy_net = ActionInModel(seq_len, embedding_dim, num_head=agent_config['num_head'])
+            self.policy_net = ActionInModel(seq_len, embedding_dim, num_head=agent_config['num_head'], num_attn=agent_config['num_attn'])
         elif agent_config['policy_type'] == "DQN":
             self.policy_net = DQNModel(seq_len, embedding_dim)
         else:
             raise ValueError("Given policy type invalid!")
 
         self.policy_net.to(self.device)
-        self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=agent_config['learning_rate'])
+        self.optimizer = torch.optim.AdamW(self.policy_net.parameters(), lr=agent_config['learning_rate'])
 
     def __str__(self) -> str:
         return self.agent_config['policy_type'] + '-' + self.agent_config['encoding_function'] + '-' + str(
+            self.agent_config['num_attn']) + '-'  + str(
             self.agent_config['num_head']) + '-' + str(self.env.ndim) + '-' + str(self.env.hsize)
 
     def detach_copy(self) -> Agent:
         """save agent model snapshot that only contains NN params but no memory"""
         new_agent = self.__class__(self.env, ndim=self.ndim, hsize=self.hsize, agent_config=self.agent_config)
-        new_agent.policy_net = deepcopy(self.policy_net)
-        new_agent.optimizer = torch.optim.Adam(new_agent.policy_net.parameters(), lr=self.agent_config['learning_rate'])
+        p = new_agent.policy_net.parameters()
+        for par in p:
+            print(par)
+            break
+        new_agent.policy_net.load_state_dict(self.policy_net.state_dict())
+        new_agent.optimizer = torch.optim.AdamW(new_agent.policy_net.parameters(), lr=self.agent_config['learning_rate'])
+        new_agent.optimizer.load_state_dict(self.optimizer.state_dict())
+        new_agent.epsilon = self.epsilon
+        new_agent.steps_done = self.steps_done
         return new_agent
 
     def update_rates(self, denominator: float) -> None:
@@ -90,7 +100,9 @@ class QAgent(Agent, ABC):
         obs = obs.unsqueeze(0)  # (1, N, D) for batch size = 1
         sample = random.random()
         if evaluate:
-            return self.policy_net(obs).max(1)[1].view(1, 1)
+            self.policy_net.eval()
+            with torch.no_grad(): 
+                return self.policy_net(obs).max(1)[1].view(1, 1)
         self.steps_done += 1
         self.update_rates(self.steps_done)
         # print(sample, self.epsilon)

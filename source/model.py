@@ -5,6 +5,7 @@ from collections import namedtuple, deque
 import numpy as np
 import torch
 from torch import nn
+from torch.nn.modules import dropout
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
@@ -47,7 +48,7 @@ class ReplayMemory(object):
 
 
 class Attention(nn.Module):
-    def __init__(self, seq_len: int, embedding_dim: int, dropout: float = 0.4, num_head=1):
+    def __init__(self, seq_len: int, embedding_dim: int, dropout: float = 0.1, num_head=1):
         super().__init__()
         self.seq_len = seq_len
         self.dk = embedding_dim
@@ -58,8 +59,7 @@ class Attention(nn.Module):
 
         self.norm_1 = nn.LayerNorm(normalized_shape=embedding_dim)
         self.norm_2 = nn.LayerNorm(normalized_shape=embedding_dim)
-        self.dropout = nn.Dropout(dropout)
-        self.multihead_attn = nn.MultiheadAttention(embedding_dim, num_head, batch_first=True)
+        self.multihead_attn = nn.MultiheadAttention(embedding_dim, num_head, batch_first=True, dropout=dropout)
 
     def forward(self, input_tensor: torch.Tensor):
         # size (B,N,D) or (N,D)
@@ -67,16 +67,19 @@ class Attention(nn.Module):
         q = self.q_linear(input_tensor)  # (B, N, D)
         k = self.k_linear(input_tensor)
         v = self.v_linear(input_tensor)
-        attn_output, attn_output_weights = self.multihead_attn(q, k, v)
-        output_tensor = self.norm_2(input_tensor + self.dropout(attn_output))
+        attn_output, _ = self.multihead_attn(q, k, v)
+        output_tensor = self.norm_2(input_tensor + attn_output)
         return output_tensor
 
 
 class ActionInModel(nn.Module):
-    def __init__(self, seq_len: int, embedding_dim: int, num_head=1):
+    def __init__(self, seq_len: int, embedding_dim: int, num_head=1, num_attn=1):
         super(ActionInModel, self).__init__()
         self.n_token = int((seq_len - 1) / 2)
-        self.attn_head = Attention(seq_len + 1, embedding_dim, num_head=num_head)
+        self.num_attn, self.num_head = num_attn, num_head
+        self.attn_layers = nn.ModuleDict()
+        for n in range(num_attn):
+            self.attn_layers[f"attn_{n}"] = Attention(seq_len + 1, embedding_dim, num_head=num_head)
         self.linear = nn.Sequential(nn.Linear((seq_len + 1) * embedding_dim, 128),
                                     nn.ReLU(),
                                     nn.Dropout(0.5),
@@ -92,8 +95,9 @@ class ActionInModel(nn.Module):
             action_tensor = action_space[..., i, :].unsqueeze(-2)
             input_cat = torch.cat((input_tensor.clone().detach().requires_grad_(True),
                                    action_tensor.clone().detach().requires_grad_(True)), -2)  # concat input to action; (B,N+1,D)
-            S = self.attn_head(input_cat)
-            X = torch.flatten(S, start_dim=-2).float()
+            for n in range(self.num_attn):
+                input_cat = self.attn_layers[f"attn_{n}"](input_cat)
+            X = torch.flatten(input_cat, start_dim=-2).float()
             qval = self.linear(X)
             qvals.append(qval)
         # qvals will be a list of num_actions
@@ -101,6 +105,7 @@ class ActionInModel(nn.Module):
         # if single element, each element will be of size (1, 1)
         output = torch.cat(qvals, 1)
         return output
+    
 
 
 class DQNModel(nn.Module):
