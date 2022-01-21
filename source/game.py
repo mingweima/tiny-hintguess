@@ -25,7 +25,8 @@ class TinyHintGuessGame:
             self.target = initial_config['target']
         self.h1_per = np.random.permutation(self.h1)  # permute hands
         self.h2_per = np.random.permutation(self.h2)
-        return np.hstack((self.h2, self.h1, np.array(self.target))) # this is obs to hinter; note that the action space (here h1) must be right before the target which is at the end
+        return np.hstack((self.h2, self.h1, np.array(
+            self.target)))  # this is obs to hinter; note that the action space (here h1) must be right before the target which is at the end
 
     def step(self, action: int) -> (np.ndarray, float, bool, dict):
         if self.steps == 0:
