@@ -31,7 +31,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-with open("../" +args.config_file, encoding='utf-8') as f:
+with open("../" + args.config_file, encoding='utf-8') as f:
     usr_config = yaml.safe_load(f)
 
 print(torch.__version__)
@@ -51,7 +51,7 @@ def train_agents(verbose: bool = True, config: Optional[dict] = None):
     env = TinyHintGuessGame(ndim=ndim, hsize=hsize)
     hinter = agent_class(env, ndim=ndim, hsize=hsize, agent_config=agent_config)
     guesser = agent_class(env, ndim=ndim, hsize=hsize, agent_config=agent_config)
-    
+
     hinter.policy_net.train()
     guesser.policy_net.train()
 

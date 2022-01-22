@@ -5,7 +5,6 @@ from collections import namedtuple, deque
 import numpy as np
 import torch
 from torch import nn
-from torch.nn.modules import dropout
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
@@ -94,7 +93,8 @@ class ActionInModel(nn.Module):
         for i in range(self.n_token):
             action_tensor = action_space[..., i, :].unsqueeze(-2)
             input_cat = torch.cat((input_tensor.clone().detach().requires_grad_(True),
-                                   action_tensor.clone().detach().requires_grad_(True)), -2)  # concat input to action; (B,N+1,D)
+                                   action_tensor.clone().detach().requires_grad_(True)),
+                                  -2)  # concat input to action; (B,N+1,D)
             for n in range(self.num_attn):
                 input_cat = self.attn_layers[f"attn_{n}"](input_cat)
             X = torch.flatten(input_cat, start_dim=-2).float()
@@ -105,7 +105,6 @@ class ActionInModel(nn.Module):
         # if single element, each element will be of size (1, 1)
         output = torch.cat(qvals, 1)
         return output
-    
 
 
 class DQNModel(nn.Module):
@@ -115,7 +114,7 @@ class DQNModel(nn.Module):
         super(DQNModel, self).__init__()
         self.n_token = int((seq_len - 1) / 2)
         self.model = nn.Sequential(
-            nn.Linear(embedding_dim*seq_len, 128),
+            nn.Linear(embedding_dim * seq_len, 128),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(128, 128),

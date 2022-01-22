@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod
-from copy import deepcopy
-from hashlib import new
 
 from model import *
 
@@ -54,7 +52,8 @@ class QAgent(Agent, ABC):
         # Policy net: input tensor of size (B: batch size, N: sequence len, D: embed dim)
         # output tensor of size (B, num_actions) containing Q values
         if agent_config['policy_type'] == "ActionIn":
-            self.policy_net = ActionInModel(seq_len, embedding_dim, num_head=agent_config['num_head'], num_attn=agent_config['num_attn'])
+            self.policy_net = ActionInModel(seq_len, embedding_dim, num_head=agent_config['num_head'],
+                                            num_attn=agent_config['num_attn'])
         elif agent_config['policy_type'] == "DQN":
             self.policy_net = DQNModel(seq_len, embedding_dim)
         else:
@@ -65,7 +64,7 @@ class QAgent(Agent, ABC):
 
     def __str__(self) -> str:
         return self.agent_config['policy_type'] + '-' + self.agent_config['encoding_function'] + '-' + str(
-            self.agent_config['num_attn']) + '-'  + str(
+            self.agent_config['num_attn']) + '-' + str(
             self.agent_config['num_head']) + '-' + str(self.env.ndim) + '-' + str(self.env.hsize)
 
     def detach_copy(self) -> Agent:
@@ -76,7 +75,8 @@ class QAgent(Agent, ABC):
             print(par)
             break
         new_agent.policy_net.load_state_dict(self.policy_net.state_dict())
-        new_agent.optimizer = torch.optim.AdamW(new_agent.policy_net.parameters(), lr=self.agent_config['learning_rate'])
+        new_agent.optimizer = torch.optim.AdamW(new_agent.policy_net.parameters(),
+                                                lr=self.agent_config['learning_rate'])
         new_agent.optimizer.load_state_dict(self.optimizer.state_dict())
         new_agent.epsilon = self.epsilon
         new_agent.steps_done = self.steps_done
@@ -101,7 +101,7 @@ class QAgent(Agent, ABC):
         sample = random.random()
         if evaluate:
             self.policy_net.eval()
-            with torch.no_grad(): 
+            with torch.no_grad():
                 return self.policy_net(obs).max(1)[1].view(1, 1)
         self.steps_done += 1
         self.update_rates(self.steps_done)
