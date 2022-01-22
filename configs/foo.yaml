@@ -5,7 +5,7 @@ hsize: 3
 update_frequency: 10
 
 agent_config:
-    embedding_dim: 100
+    embedding_dim: 196
     policy_type: ActionIn
     replay_capacity: 100
     learning_rate: 1.0e-4
@@ -13,6 +13,6 @@ agent_config:
     eps_start: 1.
     eps_end: 0.1
     eps_decay: 10
-    encoding_function: sin
+    encoding_function: mnist
     num_head: 4
     num_attn: 3

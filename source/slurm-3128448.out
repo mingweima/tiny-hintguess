@@ -1,4 +1,0 @@
-Job ID: 3128448
-Job User: mma3
-Num Cores: 4,12,4(x2),12,4(x15),16(x4),4(x39),16(x2),4,8,4(x4),8,4,16(x2),4,12,4(x3),16(x2)
-slurmstepd: error: *** JOB 3128448 ON midway3-0001 CANCELLED AT 2022-01-20T20:53:03 ***

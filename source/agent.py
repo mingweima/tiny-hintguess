@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from model import *
-
+from mnist import MNIST_Encoding
 
 class Agent(ABC):
     def __init__(self, ndim, hsize):
@@ -46,6 +46,9 @@ class QAgent(Agent, ABC):
             self.encoding_function = one_hot_encoding
         elif agent_config['encoding_function'] == 'sin':
             self.encoding_function = sin_positional_encoding
+        elif agent_config['encoding_function'] == 'mnist':
+            mnist_encoder = MNIST_Encoding()
+            self.encoding_function = mnist_encoder
         else:
             raise ValueError("Invalid encoding function!")
 
@@ -71,9 +74,9 @@ class QAgent(Agent, ABC):
         """save agent model snapshot that only contains NN params but no memory"""
         new_agent = self.__class__(self.env, ndim=self.ndim, hsize=self.hsize, agent_config=self.agent_config)
         p = new_agent.policy_net.parameters()
-        for par in p:
-            print(par)
-            break
+        # for par in p:
+        #     print(par)
+        #     break
         new_agent.policy_net.load_state_dict(self.policy_net.state_dict())
         new_agent.optimizer = torch.optim.AdamW(new_agent.policy_net.parameters(),
                                                 lr=self.agent_config['learning_rate'])
